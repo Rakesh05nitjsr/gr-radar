@@ -42,25 +42,33 @@ public:
                            float center_freq,
                            int num_delay_samps,
                            std::string args_tx,
-                           int channel_tx,
+                           int channel_tx0,
+                           int channel_tx1,
                            std::string wire_tx,
                            std::string clock_source_tx,
                            std::string time_source_tx,
-                           std::string antenna_tx,
-                           float gain_tx,
+                           std::string antenna_tx0,
+                           std::string antenna_tx1,
+                           float gain_tx0,
+                           float gain_tx1,
                            float timeout_tx,
                            float wait_tx,
-                           float lo_offset_tx,
+                           float lo_offset_tx0,
+                           float lo_offset_tx1,
                            std::string args_rx,
-                           int channel_rx,
+                           int channel_rx0,
+                           int channel_rx1,
                            std::string wire_rx,
                            std::string clock_source_rx,
                            std::string time_source_rx,
-                           std::string antenna_rx,
-                           float gain_rx,
+                           std::string antenna_rx0,
+                           std::string antenna_rx1,
+                           float gain_rx0,
+                           float gain_rx1,
                            float timeout_rx,
                            float wait_rx,
-                           float lo_offset_rx,
+                           float lo_offset_rx0,
+                           float lo_offset_rx1,
                            const std::string& len_key);
     ~usrp_echotimer_cc_impl();
     void send();
@@ -78,18 +86,23 @@ public:
     std::string d_args_tx, d_args_rx;
     std::string d_clock_source_tx, d_clock_source_rx;
     std::string d_wire_tx, d_wire_rx;
-    std::string d_antenna_tx, d_antenna_rx;
+    std::string d_antenna_tx0, d_antenna_tx1; 
+    std::string d_antenna_rx0, d_antenna_rx1;
     std::string d_time_source_tx, d_time_source_rx;
+    int d_channel_tx0, d_channel_tx1;
+    int d_channel_rx0, d_channel_rx1;
     uhd::usrp::multi_usrp::sptr d_usrp_tx, d_usrp_rx;
     uhd::tune_request_t d_tune_request_tx, d_tune_request_rx;
     uhd::tx_streamer::sptr d_tx_stream;
     uhd::rx_streamer::sptr d_rx_stream;
     uhd::tx_metadata_t d_metadata_tx;
     uhd::rx_metadata_t d_metadata_rx;
-    double d_lo_offset_tx, d_lo_offset_rx;
+    double d_lo_offset_tx0, d_lo_offset_tx1;
+    double d_lo_offset_rx0, d_lo_offset_rx1;
     float d_timeout_tx, d_timeout_rx;
     float d_wait_tx, d_wait_rx;
-    float d_gain_tx, d_gain_rx;
+    float d_gain_tx0, d_gain_tx1;
+    float d_gain_rx0, d_gain_rx1;
 
     uhd::time_spec_t d_time_now_tx, d_time_now_rx;
 
