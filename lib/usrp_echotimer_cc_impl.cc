@@ -108,14 +108,13 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
                                                float lo_offset_rx,
                                                const std::string& len_key)
     : gr::tagged_stream_block("usrp_echotimer_cc",
-                              gr::io_signature::make(1, 1, sizeof(gr_complex)),
-                              gr::io_signature::make(1, 1, sizeof(gr_complex)),
+                              gr::io_signature::make(2, 2, sizeof(gr_complex)),
+                              gr::io_signature::make(2, 2, sizeof(gr_complex)),
                               len_key)
 {
     d_samp_rate = samp_rate;
     d_center_freq = center_freq;
     d_num_delay_samps = num_delay_samps;
-    d_out_buffer.resize(0);
 
     //***** Setup USRP TX *****//
 
@@ -165,7 +164,8 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
     // Setup transmit streamer
     uhd::stream_args_t stream_args_tx("fc32", d_wire_tx); // complex floats
     std::vector<size_t> channel_nums_tx;
-    channel_nums_tx.push_back(channel_tx);
+    channel_nums_tx.push_back(0);
+    channel_nums_tx.push_back(1);
     stream_args_tx.channels = channel_nums_tx;
     d_tx_stream = d_usrp_tx->get_tx_stream(stream_args_tx);
 
@@ -211,7 +211,8 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
     // Setup receive streamer
     uhd::stream_args_t stream_args_rx("fc32", d_wire_rx); // complex floats
     std::vector<size_t> channel_nums_rx;
-    channel_nums_rx.push_back(channel_rx);
+    channel_nums_rx.push_back(0);
+    channel_nums_rx.push_back(1);
     stream_args_rx.channels = channel_nums_rx;
     d_rx_stream = d_usrp_rx->get_rx_stream(stream_args_rx);
 
@@ -251,56 +252,64 @@ void usrp_echotimer_cc_impl::set_tx_gain(float gain) { d_usrp_tx->set_tx_gain(ga
 
 void usrp_echotimer_cc_impl::send()
 {
-    // Setup metadata for first package
     d_metadata_tx.start_of_burst = true;
     d_metadata_tx.end_of_burst = false;
     d_metadata_tx.has_time_spec = true;
-    d_metadata_tx.time_spec =
-        d_time_now_tx + uhd::time_spec_t(d_wait_tx); // Timespec needed?
+    d_metadata_tx.time_spec = d_time_now_tx + uhd::time_spec_t(d_wait_tx);
 
-    // Send input buffer
-    size_t num_acc_samps = 0; // Number of accumulated samples
-    size_t num_tx_samps, total_num_samps;
-    total_num_samps = d_noutput_items_send;
-    // Data to USRP
-    num_tx_samps = d_tx_stream->send(d_in_send,
-                                     total_num_samps,
-                                     d_metadata_tx,
-                                     total_num_samps / (float)d_samp_rate + d_timeout_tx);
-    // Get timeout
+    size_t total_num_samps = d_noutput_items_send;
+
+    std::vector<const void*> tx_buffs(2);
+    tx_buffs[0] = d_in_send0;
+    tx_buffs[1] = d_in_send1;
+
+    double timeout = total_num_samps / (float)d_samp_rate + d_timeout_tx;
+
+    size_t num_tx_samps = d_tx_stream->send(
+        tx_buffs,
+        total_num_samps,
+        d_metadata_tx,
+        timeout
+    );
+
     if (num_tx_samps < total_num_samps)
         std::cerr << "Send timeout..." << std::endl;
 
-    // send a mini EOB packet
     d_metadata_tx.start_of_burst = false;
     d_metadata_tx.end_of_burst = true;
     d_metadata_tx.has_time_spec = false;
+
     d_tx_stream->send("", 0, d_metadata_tx);
 }
 
 void usrp_echotimer_cc_impl::receive()
 {
-    // Setup RX streaming
     size_t total_num_samps = d_noutput_items_recv;
+
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = false;
     stream_cmd.time_spec = d_time_now_rx + uhd::time_spec_t(d_wait_rx);
+
     d_rx_stream->issue_stream_cmd(stream_cmd);
 
-    size_t num_rx_samps;
-    // Receive a packet
-    num_rx_samps = d_rx_stream->recv(d_out_recv,
-                                     total_num_samps,
-                                     d_metadata_rx,
-                                     total_num_samps / (float)d_samp_rate + d_timeout_rx);
+    std::vector<void*> rx_buffs(2);
+    rx_buffs[0] = d_out_recv0;
+    rx_buffs[1] = d_out_recv1;
 
-    // Save timestamp
+    double timeout = total_num_samps / (float)d_samp_rate + d_timeout_rx;
+
+    size_t num_rx_samps = d_rx_stream->recv(
+        rx_buffs,
+        total_num_samps,
+        d_metadata_rx,
+        timeout
+    );
+
     d_time_val =
         pmt::make_tuple(pmt::from_uint64(d_metadata_rx.time_spec.get_full_secs()),
                         pmt::from_double(d_metadata_rx.time_spec.get_frac_secs()));
 
-    // Handle the error code
     if (d_metadata_rx.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
         throw std::runtime_error(
             str(boost::format("Receiver error %s") % d_metadata_rx.strerror()));
@@ -315,27 +324,38 @@ int usrp_echotimer_cc_impl::work(int noutput_items,
                                  gr_vector_const_void_star& input_items,
                                  gr_vector_void_star& output_items)
 {
-    gr_complex* in = (gr_complex*)input_items[0]; // remove const
-    gr_complex* out = (gr_complex*)output_items[0];
+    gr_complex* in0 = (gr_complex*)input_items[0]; // remove const
+    gr_complex* in1 = (gr_complex*)input_items[1];
+
+    gr_complex* out0 = (gr_complex*)output_items[0];
+    gr_complex* out1 = (gr_complex*)output_items[1];
 
     // Set output items on packet length
     noutput_items = ninput_items[0];
 
-    // Resize output buffer
-    if (d_out_buffer.size() != noutput_items)
-        d_out_buffer.resize(noutput_items);
+    // Resize MIMO output buffers
+    d_out_buffer0.resize(noutput_items);
+    d_out_buffer1.resize(noutput_items);
+
+  if (noutput_items <= 0)
+    return 0;
+
+if (d_num_delay_samps >= noutput_items)
+    d_num_delay_samps = noutput_items - 1;
 
     // Get time from USRP TX
     d_time_now_tx = d_usrp_tx->get_time_now();
     d_time_now_rx = d_time_now_tx;
 
     // Send thread
-    d_in_send = in;
+    d_in_send0 = in0;
+    d_in_send1 = in1;
     d_noutput_items_send = noutput_items;
     d_thread_send = gr::thread::thread(boost::bind(&usrp_echotimer_cc_impl::send, this));
 
     // Receive thread
-    d_out_recv = &d_out_buffer[0];
+    d_out_recv0 = &d_out_buffer0[0];
+    d_out_recv1 = &d_out_buffer1[0];
     d_noutput_items_recv = noutput_items;
     d_thread_recv =
         gr::thread::thread(boost::bind(&usrp_echotimer_cc_impl::receive, this));
@@ -345,18 +365,25 @@ int usrp_echotimer_cc_impl::work(int noutput_items,
     d_thread_recv.join();
 
     // Shift of number delay samples (fill with zeros)
-    memcpy(out,
-           &d_out_buffer[0] + d_num_delay_samps,
-           (noutput_items - d_num_delay_samps) *
-               sizeof(gr_complex)); // push buffer to output
-    memset(out + (noutput_items - d_num_delay_samps),
-           0,
-           d_num_delay_samps * sizeof(gr_complex)); // set zeros
+   memcpy(out0,
+       &d_out_buffer0[0] + d_num_delay_samps,
+       (noutput_items - d_num_delay_samps) * sizeof(gr_complex));
 
-    // Setup rx_time tag
-    add_item_tag(0, nitems_written(0), d_time_key, d_time_val, d_srcid);
+   memset(out0 + (noutput_items - d_num_delay_samps),
+       0,
+       d_num_delay_samps * sizeof(gr_complex));
+
+   memcpy(out1,
+       &d_out_buffer1[0] + d_num_delay_samps,
+       (noutput_items - d_num_delay_samps) * sizeof(gr_complex));
+
+   memset(out1 + (noutput_items - d_num_delay_samps),
+       0,
+       d_num_delay_samps * sizeof(gr_complex));
 
     // Tell runtime system how many output items we produced.
+    add_item_tag(0, nitems_written(0), d_time_key, d_time_val, d_srcid);
+    add_item_tag(1, nitems_written(1), d_time_key, d_time_val, d_srcid);
     return noutput_items;
 }
 
