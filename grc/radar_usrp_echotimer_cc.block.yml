@@ -118,12 +118,20 @@ parameters:
     hide: part
 
 inputs:
-  - label: IQ in
+  - label: IQ in TX0
+    domain: stream
+    dtype: complex
+
+  - label: IQ in TX1
     domain: stream
     dtype: complex
 
 outputs:
-  - label: IQ out
+  - label: IQ out RX0
+    domain: stream
+    dtype: complex
+
+  - label: IQ out RX1
     domain: stream
     dtype: complex
 
