@@ -33,50 +33,66 @@ usrp_echotimer_cc::sptr usrp_echotimer_cc::make(int samp_rate,
                                                 float center_freq,
                                                 int num_delay_samps,
                                                 std::string args_tx,
-                                                int channel_tx,
+                                                int channel_tx0,
+                                                int channel_tx1,
                                                 std::string wire_tx,
                                                 std::string clock_source_tx,
                                                 std::string time_source_tx,
-                                                std::string antenna_tx,
-                                                float gain_tx,
+                                                std::string antenna_tx0,
+                                                std::string antenna_tx1,
+                                                float gain_tx0,
+                                                float gain_tx1,
                                                 float timeout_tx,
                                                 float wait_tx,
-                                                float lo_offset_tx,
+                                                float lo_offset_tx0,
+                                                float lo_offset_tx1,
                                                 std::string args_rx,
-                                                int channel_rx,
+                                                int channel_rx0,
+                                                int channel_rx1,
                                                 std::string wire_rx,
                                                 std::string clock_source_rx,
                                                 std::string time_source_rx,
-                                                std::string antenna_rx,
-                                                float gain_rx,
+                                                std::string antenna_rx0,
+                                                std::string antenna_rx1,
+                                                float gain_rx0,
+                                                float gain_rx1,
                                                 float timeout_rx,
                                                 float wait_rx,
-                                                float lo_offset_rx,
+                                                float lo_offset_rx0,
+                                                float lo_offset_rx1,
                                                 const std::string& len_key)
 {
     return gnuradio::make_block_sptr<usrp_echotimer_cc_impl>(samp_rate,
                                                              center_freq,
                                                              num_delay_samps,
                                                              args_tx,
-                                                             channel_tx,
+                                                             channel_tx0,
+                                                             channel_tx1,
                                                              wire_tx,
                                                              clock_source_tx,
                                                              time_source_tx,
-                                                             antenna_tx,
-                                                             gain_tx,
+                                                             antenna_tx0,
+                                                             antenna_tx1,
+                                                             gain_tx0,
+                                                             gain_tx1,
                                                              timeout_tx,
                                                              wait_tx,
-                                                             lo_offset_tx,
+                                                             lo_offset_tx0,
+                                                            lo_offset_tx1,
                                                              args_rx,
-                                                             channel_rx,
+                                                             channel_rx0,
+                                                             channel_rx1,
                                                              wire_rx,
                                                              clock_source_rx,
                                                              time_source_rx,
-                                                             antenna_rx,
-                                                             gain_rx,
+                                                             antenna_rx0,
+                                                             antenna_rx1,
+                                                             gain_rx0,
+                                                             gain_rx1,
                                                              timeout_rx,
                                                              wait_rx,
-                                                             lo_offset_rx,
+                                                             lo_offset_rx0,
+                                                             lo_offset_rx1,
                                                              len_key);
 }
 
@@ -87,25 +103,33 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
                                                float center_freq,
                                                int num_delay_samps,
                                                std::string args_tx,
-                                               int channel_tx,
+                                               int channel_tx0,
+                                               int channel_tx1,
                                                std::string wire_tx,
                                                std::string clock_source_tx,
                                                std::string time_source_tx,
-                                               std::string antenna_tx,
-                                               float gain_tx,
+                                               std::string antenna_tx0,
+                                               std::string antenna_tx1,
+                                               float gain_tx0,
+                                               float gain_tx1,
                                                float timeout_tx,
                                                float wait_tx,
-                                               float lo_offset_tx,
+                                               float lo_offset_tx0,
+                                               float lo_offset_tx1,
                                                std::string args_rx,
-                                               int channel_rx,
+                                               int channel_rx0,
+                                               int channel_rx1,
                                                std::string wire_rx,
                                                std::string clock_source_rx,
                                                std::string time_source_rx,
-                                               std::string antenna_rx,
-                                               float gain_rx,
+                                               std::string antenna_rx0,
+                                               std::string antenna_rx1,
+                                               float gain_rx0,
+                                               float gain_rx1,
                                                float timeout_rx,
                                                float wait_rx,
-                                               float lo_offset_rx,
+                                               float lo_offset_rx0,
+                                               float lo_offset_rx1,
                                                const std::string& len_key)
     : gr::tagged_stream_block("usrp_echotimer_cc",
                               gr::io_signature::make(2, 2, sizeof(gr_complex)),
@@ -122,9 +146,14 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
     d_wire_tx = wire_tx;
     d_clock_source_tx = clock_source_tx;
     d_time_source_tx = time_source_tx;
-    d_antenna_tx = antenna_tx;
-    d_lo_offset_tx = lo_offset_tx;
-    d_gain_tx = gain_tx;
+    d_channel_tx0 = channel_tx0;
+    d_channel_tx1 = channel_tx1;
+    d_antenna_tx0 = antenna_tx0;
+    d_antenna_tx1 = antenna_tx1;
+    d_lo_offset_tx0 = lo_offset_tx0;
+    d_lo_offset_tx1 = lo_offset_tx1;
+    d_gain_tx0 = gain_tx0;
+    d_gain_tx1 = gain_tx1;
     d_timeout_tx = timeout_tx; // timeout for sending
     d_wait_tx = wait_tx;       // secs to wait befor sending
 
@@ -139,15 +168,21 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
     std::cout << "Actual TX Rate: " << d_usrp_tx->get_tx_rate() << std::endl;
 
     // Setup USRP TX: gain
-    set_tx_gain(d_gain_tx);
+    d_usrp_tx->set_tx_gain(d_gain_tx0, d_channel_tx0);
+    d_usrp_tx->set_tx_gain(d_gain_tx1, d_channel_tx1);
 
-    // Setup USRP TX: tune request
-    d_tune_request_tx =
-        uhd::tune_request_t(d_center_freq); // FIXME: add alternative tune requests
-    d_usrp_tx->set_tx_freq(d_tune_request_tx);
+    d_usrp_tx->set_tx_freq(
+    uhd::tune_request_t(d_center_freq, d_lo_offset_tx0),
+    d_channel_tx0
+);
 
-    // Setup USRP TX: antenna
-    d_usrp_tx->set_tx_antenna(d_antenna_tx);
+    d_usrp_tx->set_tx_freq(
+    uhd::tune_request_t(d_center_freq, d_lo_offset_tx1),
+    d_channel_tx1
+);
+
+    d_usrp_tx->set_tx_antenna(d_antenna_tx0, d_channel_tx0);
+    d_usrp_tx->set_tx_antenna(d_antenna_tx1, d_channel_tx1);
 
     // Setup USRP TX: clock source
     d_usrp_tx->set_clock_source(d_clock_source_tx); // Set TX clock, TX is master
@@ -164,8 +199,8 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
     // Setup transmit streamer
     uhd::stream_args_t stream_args_tx("fc32", d_wire_tx); // complex floats
     std::vector<size_t> channel_nums_tx;
-    channel_nums_tx.push_back(0);
-    channel_nums_tx.push_back(1);
+    channel_nums_tx.push_back(d_channel_tx0);
+    channel_nums_tx.push_back(d_channel_tx1);
     stream_args_tx.channels = channel_nums_tx;
     d_tx_stream = d_usrp_tx->get_tx_stream(stream_args_tx);
 
@@ -175,9 +210,14 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
     d_wire_rx = wire_rx;
     d_clock_source_rx = clock_source_rx;
     d_time_source_rx = time_source_rx;
-    d_antenna_rx = antenna_rx;
-    d_lo_offset_rx = lo_offset_rx;
-    d_gain_rx = gain_rx;
+    d_channel_rx0 = channel_rx0;
+    d_channel_rx1 = channel_rx1;
+    d_antenna_rx0 = antenna_rx0;
+    d_antenna_rx1 = antenna_rx1;
+    d_lo_offset_rx0 = lo_offset_rx0;
+    d_lo_offset_rx1 = lo_offset_rx1;
+    d_gain_rx0 = gain_rx0;
+    d_gain_rx1 = gain_rx1;
     d_timeout_rx = timeout_rx; // timeout for receiving
     d_wait_rx = wait_rx;       // secs to wait befor receiving
 
@@ -192,15 +232,21 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
     std::cout << "Actual RX Rate: " << d_usrp_rx->get_rx_rate() << std::endl;
 
     // Setup USRP RX: gain
-    set_rx_gain(d_gain_rx);
+  d_usrp_rx->set_rx_gain(d_gain_rx0, d_channel_rx0);
+d_usrp_rx->set_rx_gain(d_gain_rx1, d_channel_rx1);
 
-    // Setup USRP RX: tune request
-    d_tune_request_rx = uhd::tune_request_t(
-        d_center_freq, d_lo_offset_rx); // FIXME: add alternative tune requests
-    d_usrp_rx->set_rx_freq(d_tune_request_rx);
+d_usrp_rx->set_rx_freq(
+    uhd::tune_request_t(d_center_freq, d_lo_offset_rx0),
+    d_channel_rx0
+);
 
-    // Setup USRP RX: antenna
-    d_usrp_rx->set_rx_antenna(d_antenna_rx);
+d_usrp_rx->set_rx_freq(
+    uhd::tune_request_t(d_center_freq, d_lo_offset_rx1),
+    d_channel_rx1
+);
+
+d_usrp_rx->set_rx_antenna(d_antenna_rx0, d_channel_rx0);
+d_usrp_rx->set_rx_antenna(d_antenna_rx1, d_channel_rx1);
 
     // Setup USRP RX: clock source
     d_usrp_rx->set_clock_source(d_clock_source_rx); // RX is slave, clock is set on TX
@@ -211,8 +257,8 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
     // Setup receive streamer
     uhd::stream_args_t stream_args_rx("fc32", d_wire_rx); // complex floats
     std::vector<size_t> channel_nums_rx;
-    channel_nums_rx.push_back(0);
-    channel_nums_rx.push_back(1);
+    channel_nums_rx.push_back(d_channel_rx0);
+    channel_nums_rx.push_back(d_channel_rx1);
     stream_args_rx.channels = channel_nums_rx;
     d_rx_stream = d_usrp_rx->get_rx_stream(stream_args_rx);
 
@@ -246,9 +292,17 @@ void usrp_echotimer_cc_impl::set_num_delay_samps(int num_samps)
     d_num_delay_samps = num_samps;
 }
 
-void usrp_echotimer_cc_impl::set_rx_gain(float gain) { d_usrp_rx->set_rx_gain(gain); }
+void usrp_echotimer_cc_impl::set_rx_gain(float gain)
+{
+    d_usrp_rx->set_rx_gain(gain, d_channel_rx0);
+    d_usrp_rx->set_rx_gain(gain, d_channel_rx1);
+}
 
-void usrp_echotimer_cc_impl::set_tx_gain(float gain) { d_usrp_tx->set_tx_gain(gain); }
+void usrp_echotimer_cc_impl::set_tx_gain(float gain)
+{
+    d_usrp_tx->set_tx_gain(gain, d_channel_tx0);
+    d_usrp_tx->set_tx_gain(gain, d_channel_tx1);
+}
 
 void usrp_echotimer_cc_impl::send()
 {
@@ -337,8 +391,13 @@ int usrp_echotimer_cc_impl::work(int noutput_items,
     d_out_buffer0.resize(noutput_items);
     d_out_buffer1.resize(noutput_items);
 
-  if (noutput_items <= 0)
+  noutput_items = ninput_items[0];
+
+if (noutput_items <= 0)
     return 0;
+
+d_out_buffer0.resize(noutput_items);
+d_out_buffer1.resize(noutput_items);
 
 if (d_num_delay_samps >= noutput_items)
     d_num_delay_samps = noutput_items - 1;
