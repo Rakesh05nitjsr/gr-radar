@@ -72,7 +72,8 @@ public:
     int d_samp_rate;
     float d_center_freq;
     int d_num_delay_samps;
-    std::vector<gr_complex> d_out_buffer;
+    std::vector<gr_complex> d_out_buffer0;
+    std::vector<gr_complex> d_out_buffer1;
 
     std::string d_args_tx, d_args_rx;
     std::string d_clock_source_tx, d_clock_source_rx;
@@ -92,13 +93,19 @@ public:
 
     uhd::time_spec_t d_time_now_tx, d_time_now_rx;
 
-    gr::thread::thread d_thread_recv;
-    gr_complex* d_out_recv;
+   gr::thread::thread d_thread_recv;
+
+    gr_complex* d_out_recv0;
+    gr_complex* d_out_recv1;
+
     int d_noutput_items_recv;
     pmt::pmt_t d_time_key, d_time_val, d_srcid;
 
     gr::thread::thread d_thread_send;
-    gr_complex* d_in_send;
+
+    const gr_complex* d_in_send0;
+    const gr_complex* d_in_send1;
+
     int d_noutput_items_send;
 
     // Where all the action really happens
