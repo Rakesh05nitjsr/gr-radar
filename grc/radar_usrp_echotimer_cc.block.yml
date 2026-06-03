@@ -20,10 +20,15 @@ parameters:
     dtype: string
     default: "'addr=192.168.xx.xx'"
     hide: part
-  - id: channel_tx
-    label: TX Channel
+  - id: channel_tx0
+    label: TX0 Channel
     dtype: int
     default: "0"
+    hide: part
+  - id: channel_tx1
+    label: TX1 Channel
+    dtype: int
+    default: "1"
     hide: part
   - id: wire_tx
     label: TX Wire
@@ -40,12 +45,20 @@ parameters:
     dtype: string
     default: "'none'"
     hide: part
-  - id: antenna_tx
-    label: TX Antenna
+  - id: antenna_tx0
+    label: TX0 Antenna
     dtype: string
     hide: part
-  - id: gain_tx
-    label: TX Gain
+  - id: antenna_tx1
+    label: TX1 Antenna
+    dtype: string
+    hide: part
+  - id: gain_tx0
+    label: TX0 Gain
+    dtype: float
+    hide: part
+  - id: gain_tx1
+    label: TX1 Gain
     dtype: float
     hide: part
   - id: timeout_tx
@@ -58,8 +71,13 @@ parameters:
     dtype: float
     default: "0.05"
     hide: part
-  - id: lo_offset_tx
-    label: TX Lo offset
+  - id: lo_offset_tx0
+    label: TX0 Lo offset
+    dtype: float
+    default: "0"
+    hide: part
+  - id: lo_offset_tx1
+    label: TX1 Lo offset
     dtype: float
     default: "0"
     hide: part
@@ -68,10 +86,15 @@ parameters:
     dtype: string
     default: "'addr=192.168.xx.xx'"
     hide: part
-  - id: channel_rx
-    label: RX Channel
+  - id: channel_rx0
+    label: RX0 Channel
     dtype: int
     default: "0"
+    hide: part
+  - id: channel_rx1
+    label: RX1 Channel
+    dtype: int
+    default: "1"
     hide: part
   - id: wire_rx
     label: RX Wire
@@ -88,12 +111,20 @@ parameters:
     dtype: string
     default: "'mimo'"
     hide: part
-  - id: antenna_rx
-    label: RX Antenna
+  - id: antenna_rx0
+    label: RX0 Antenna
     dtype: string
     hide: part
-  - id: gain_rx
-    label: RX Gain
+  - id: antenna_rx1
+    label: RX1 Antenna
+    dtype: string
+    hide: part
+  - id: gain_rx0
+    label: RX0 Gain
+    dtype: float
+    hide: part
+  - id: gain_rx1
+    label: RX1 Gain
     dtype: float
     hide: part
   - id: timeout_rx
@@ -106,8 +137,13 @@ parameters:
     dtype: float
     default: "0.05"
     hide: part
-  - id: lo_offset_rx
-    label: RX Lo offset
+  - id: lo_offset_rx0
+    label: RX0 Lo offset
+    dtype: float
+    default: "0"
+    hide: part
+  - id: lo_offset_rx1
+    label: RX1 Lo offset
     dtype: float
     default: "0"
     hide: part
@@ -138,13 +174,13 @@ outputs:
 templates:
   imports: from gnuradio import radar
   make: radar.usrp_echotimer_cc(${samp_rate}, ${center_freq}, ${num_delay_samps},
-    ${args_tx}, ${channel_tx}, ${wire_tx}, ${clock_source_tx}, ${time_source_tx}, ${antenna_tx},
-    ${gain_tx}, ${timeout_tx}, ${wait_tx}, ${lo_offset_tx}, ${args_rx}, ${channel_rx}, ${wire_rx},
-    ${clock_source_rx}, ${time_source_rx}, ${antenna_rx}, ${gain_rx}, ${timeout_rx},
-    ${wait_rx}, ${lo_offset_rx}, ${len_key})
+    ${args_tx}, ${channel_tx0}, ${channel_tx1}, ${wire_tx}, ${clock_source_tx},
+    ${time_source_tx}, ${antenna_tx0}, ${antenna_tx1}, ${gain_tx0}, ${gain_tx1},
+    ${timeout_tx}, ${wait_tx}, ${lo_offset_tx0}, ${lo_offset_tx1}, ${args_rx},
+    ${channel_rx0}, ${channel_rx1}, ${wire_rx}, ${clock_source_rx},
+    ${time_source_rx}, ${antenna_rx0}, ${antenna_rx1}, ${gain_rx0}, ${gain_rx1},
+    ${timeout_rx}, ${wait_rx}, ${lo_offset_rx0}, ${lo_offset_rx1}, ${len_key})
   callbacks:
     - set_num_delay_samps(${num_delay_samps})
-    - set_tx_gain(${gain_tx})
-    - set_rx_gain(${gain_rx})
 
 file_format: 1
