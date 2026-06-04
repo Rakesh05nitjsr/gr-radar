@@ -333,7 +333,10 @@ void usrp_echotimer_cc_impl::send()
     d_metadata_tx.end_of_burst = true;
     d_metadata_tx.has_time_spec = false;
 
-    d_tx_stream->send("", 0, d_metadata_tx);
+    std::vector<const void*> eob_buffs(2);
+    eob_buffs[0] = nullptr;
+    eob_buffs[1] = nullptr;
+    d_tx_stream->send(eob_buffs, 0, d_metadata_tx);
 }
 
 void usrp_echotimer_cc_impl::receive()
@@ -387,19 +390,14 @@ int usrp_echotimer_cc_impl::work(int noutput_items,
     // Set output items on packet length
     noutput_items = ninput_items[0];
 
+    if (noutput_items <= 0)
+    return 0;
+
     // Resize MIMO output buffers
     d_out_buffer0.resize(noutput_items);
     d_out_buffer1.resize(noutput_items);
 
-  noutput_items = ninput_items[0];
-
-if (noutput_items <= 0)
-    return 0;
-
-d_out_buffer0.resize(noutput_items);
-d_out_buffer1.resize(noutput_items);
-
-if (d_num_delay_samps >= noutput_items)
+    if (d_num_delay_samps >= noutput_items)
     d_num_delay_samps = noutput_items - 1;
 
     // Get time from USRP TX
