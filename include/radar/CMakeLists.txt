@@ -35,6 +35,7 @@ install(FILES
     split_fsk_cc.h
     estimator_fsk.h
     usrp_echotimer_cc.h
+    usrp_mimo_echotimer_cc.h
     estimator_fmcw.h
     signal_generator_sync_pulse_c.h
     estimator_sync_pulse_c.h

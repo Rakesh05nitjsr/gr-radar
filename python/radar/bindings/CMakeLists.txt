@@ -44,6 +44,7 @@ list(APPEND radar_python_files
     trigger_command_python.cc
     ts_fft_cc_python.cc
     usrp_echotimer_cc_python.cc
+    usrp_mimo_echotimer_cc_python.cc
     python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(radar

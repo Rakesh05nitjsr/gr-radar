@@ -18,10 +18,10 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_RADAR_USRP_ECHOTIMER_CC_IMPL_H
-#define INCLUDED_RADAR_USRP_ECHOTIMER_CC_IMPL_H
+#ifndef INCLUDED_RADAR_USRP_MIMO_ECHOTIMER_CC_IMPL_H
+#define INCLUDED_RADAR_USRP_MIMO_ECHOTIMER_CC_IMPL_H
 
-#include <radar/usrp_echotimer_cc.h>
+#include <radar/usrp_mimo_echotimer_cc.h>
 
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/thread.hpp>
@@ -29,7 +29,7 @@
 namespace gr {
 namespace radar {
 
-class usrp_echotimer_cc_impl : public usrp_echotimer_cc
+class usrp_mimo_echotimer_cc_impl : public usrp_mimo_echotimer_cc
 {
 private:
     // Nothing to declare in this block.
@@ -38,7 +38,7 @@ protected:
     int calculate_output_stream_length(const gr_vector_int& ninput_items);
 
 public:
-    usrp_echotimer_cc_impl(int samp_rate,
+    usrp_mimo_echotimer_cc_impl(int samp_rate,
                            float center_freq,
                            int num_delay_samps,
                            std::string args_tx,
@@ -70,7 +70,7 @@ public:
                            float lo_offset_rx0,
                            float lo_offset_rx1,
                            const std::string& len_key);
-    ~usrp_echotimer_cc_impl();
+    ~usrp_mimo_echotimer_cc_impl();
     void send();
     void receive();
     void set_num_delay_samps(int num_samps);
@@ -131,4 +131,4 @@ public:
 } // namespace radar
 } // namespace gr
 
-#endif /* INCLUDED_RADAR_USRP_ECHOTIMER_CC_IMPL_H */
+#endif /* INCLUDED_RADAR_USRP_MIMO_ECHOTIMER_CC_IMPL_H */

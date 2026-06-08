@@ -18,8 +18,8 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_RADAR_USRP_ECHOTIMER_CC_H
-#define INCLUDED_RADAR_USRP_ECHOTIMER_CC_H
+#ifndef INCLUDED_RADAR_USRP_MIMO_ECHOTIMER_CC_H
+#define INCLUDED_RADAR_USRP_MIMO_ECHOTIMER_CC_H
 
 #include <gnuradio/tagged_stream_block.h>
 #include <radar/api.h>
@@ -32,17 +32,17 @@ namespace radar {
  * \ingroup radar
  *
  */
-class RADAR_API usrp_echotimer_cc : virtual public gr::tagged_stream_block
+class RADAR_API usrp_mimo_echotimer_cc : virtual public gr::tagged_stream_block
 {
 public:
-    typedef std::shared_ptr<usrp_echotimer_cc> sptr;
+    typedef std::shared_ptr<usrp_mimo_echotimer_cc> sptr;
 
     /*!
-     * \brief Return a shared_ptr to a new instance of radar::usrp_echotimer_cc.
+     * \brief Return a shared_ptr to a new instance of radar::usrp_mimo_echotimer_cc.
      *
-     * To avoid accidental use of raw pointers, radar::usrp_echotimer_cc's
+     * To avoid accidental use of raw pointers, radar::usrp_mimo_echotimer_cc's
      * constructor is in a private implementation
-     * class. radar::usrp_echotimer_cc::make is the public interface for
+     * class. radar::usrp_mimo_echotimer_cc::make is the public interface for
      * creating new instances.
      */
     static sptr make(int samp_rate,
@@ -86,4 +86,4 @@ public:
 } // namespace radar
 } // namespace gr
 
-#endif /* INCLUDED_RADAR_USRP_ECHOTIMER_CC_H */
+#endif /* INCLUDED_RADAR_USRP_MIMO_ECHOTIMER_CC_H */

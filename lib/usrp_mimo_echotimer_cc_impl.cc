@@ -22,14 +22,14 @@
 #include "config.h"
 #endif
 
-#include "usrp_echotimer_cc_impl.h"
+#include "usrp_mimo_echotimer_cc_impl.h"
 #include <gnuradio/io_signature.h>
 #include <iostream>
 
 namespace gr {
 namespace radar {
 
-usrp_echotimer_cc::sptr usrp_echotimer_cc::make(int samp_rate,
+usrp_mimo_echotimer_cc::sptr usrp_mimo_echotimer_cc::make(int samp_rate,
                                                 float center_freq,
                                                 int num_delay_samps,
                                                 std::string args_tx,
@@ -62,16 +62,16 @@ usrp_echotimer_cc::sptr usrp_echotimer_cc::make(int samp_rate,
                                                 float lo_offset_rx1,
                                                 const std::string& len_key)
 {
-    return gnuradio::make_block_sptr<usrp_echotimer_cc_impl>(samp_rate,
-                                                             center_freq,
-                                                             num_delay_samps,
-                                                             args_tx,
-                                                             channel_tx0,
-                                                             channel_tx1,
-                                                             wire_tx,
-                                                             clock_source_tx,
-                                                             time_source_tx,
-                                                             antenna_tx0,
+    return gnuradio::make_block_sptr<usrp_mimo_echotimer_cc_impl>(samp_rate,
+                                                                   center_freq,
+                                                                   num_delay_samps,
+                                                                   args_tx,
+                                                                   channel_tx0,
+                                                                   channel_tx1,
+                                                                   wire_tx,
+                                                                   clock_source_tx,
+                                                                   time_source_tx,
+                                                                   antenna_tx0,
                                                              antenna_tx1,
                                                              gain_tx0,
                                                              gain_tx1,
@@ -99,7 +99,7 @@ usrp_echotimer_cc::sptr usrp_echotimer_cc::make(int samp_rate,
 /*
  * The private constructor
  */
-usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
+usrp_mimo_echotimer_cc_impl::usrp_mimo_echotimer_cc_impl(int samp_rate,
                                                float center_freq,
                                                int num_delay_samps,
                                                std::string args_tx,
@@ -131,7 +131,7 @@ usrp_echotimer_cc_impl::usrp_echotimer_cc_impl(int samp_rate,
                                                float lo_offset_rx0,
                                                float lo_offset_rx1,
                                                const std::string& len_key)
-    : gr::tagged_stream_block("usrp_echotimer_cc",
+    : gr::tagged_stream_block("usrp_mimo_echotimer_cc",
                               gr::io_signature::make(2, 2, sizeof(gr_complex)),
                               gr::io_signature::make(2, 2, sizeof(gr_complex)),
                               len_key)
@@ -266,7 +266,7 @@ d_usrp_rx->set_rx_antenna(d_antenna_rx1, d_channel_rx1);
 
     // Setup rx_time pmt
     d_time_key = pmt::string_to_symbol("rx_time");
-    d_srcid = pmt::string_to_symbol("usrp_echotimer");
+    d_srcid = pmt::string_to_symbol("usrpmimo_echotimer");
 
     // Setup thread priority
     // uhd::set_thread_priority_safe(); // necessary? doesnt work...
@@ -278,33 +278,33 @@ d_usrp_rx->set_rx_antenna(d_antenna_rx1, d_channel_rx1);
 /*
  * Our virtual destructor.
  */
-usrp_echotimer_cc_impl::~usrp_echotimer_cc_impl() {}
+usrp_mimo_echotimer_cc_impl::~usrp_mimo_echotimer_cc_impl() {}
 
-int usrp_echotimer_cc_impl::calculate_output_stream_length(
+int usrp_mimo_echotimer_cc_impl::calculate_output_stream_length(
     const gr_vector_int& ninput_items)
 {
     int noutput_items = ninput_items[0];
     return noutput_items;
 }
 
-void usrp_echotimer_cc_impl::set_num_delay_samps(int num_samps)
+void usrp_mimo_echotimer_cc_impl::set_num_delay_samps(int num_samps)
 {
     d_num_delay_samps = num_samps;
 }
 
-void usrp_echotimer_cc_impl::set_rx_gain(float gain)
+void usrp_mimo_echotimer_cc_impl::set_rx_gain(float gain)
 {
     d_usrp_rx->set_rx_gain(gain, d_channel_rx0);
     d_usrp_rx->set_rx_gain(gain, d_channel_rx1);
 }
 
-void usrp_echotimer_cc_impl::set_tx_gain(float gain)
+void usrp_mimo_echotimer_cc_impl::set_tx_gain(float gain)
 {
     d_usrp_tx->set_tx_gain(gain, d_channel_tx0);
     d_usrp_tx->set_tx_gain(gain, d_channel_tx1);
 }
 
-void usrp_echotimer_cc_impl::send()
+void usrp_mimo_echotimer_cc_impl::send()
 {
     d_metadata_tx.start_of_burst = true;
     d_metadata_tx.end_of_burst = false;
@@ -339,7 +339,7 @@ void usrp_echotimer_cc_impl::send()
     d_tx_stream->send(eob_buffs, 0, d_metadata_tx);
 }
 
-void usrp_echotimer_cc_impl::receive()
+void usrp_mimo_echotimer_cc_impl::receive()
 {
     size_t total_num_samps = d_noutput_items_recv;
 
@@ -376,7 +376,7 @@ void usrp_echotimer_cc_impl::receive()
         std::cerr << "Receive timeout before all samples received..." << std::endl;
 }
 
-int usrp_echotimer_cc_impl::work(int noutput_items,
+int usrp_mimo_echotimer_cc_impl::work(int noutput_items,
                                  gr_vector_int& ninput_items,
                                  gr_vector_const_void_star& input_items,
                                  gr_vector_void_star& output_items)
@@ -408,14 +408,14 @@ int usrp_echotimer_cc_impl::work(int noutput_items,
     d_in_send0 = in0;
     d_in_send1 = in1;
     d_noutput_items_send = noutput_items;
-    d_thread_send = gr::thread::thread(boost::bind(&usrp_echotimer_cc_impl::send, this));
+    d_thread_send = gr::thread::thread(boost::bind(&usrp_mimo_echotimer_cc_impl::send, this));
 
     // Receive thread
     d_out_recv0 = &d_out_buffer0[0];
     d_out_recv1 = &d_out_buffer1[0];
     d_noutput_items_recv = noutput_items;
     d_thread_recv =
-        gr::thread::thread(boost::bind(&usrp_echotimer_cc_impl::receive, this));
+        gr::thread::thread(boost::bind(&usrp_mimo_echotimer_cc_impl::receive, this));
 
     // Wait for threads to complete
     d_thread_send.join();
