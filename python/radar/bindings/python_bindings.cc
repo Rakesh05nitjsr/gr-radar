@@ -45,6 +45,7 @@ void bind_transpose_matrix_vcvc(py::module&);
 void bind_trigger_command(py::module&);
 void bind_ts_fft_cc(py::module&);
 void bind_usrp_echotimer_cc(py::module&);
+void bind_usrp_mimo_echotimer_cc(py::module&);
 
 // We need this hack because import_array() returns NULL
 // for newer Python versions.
@@ -95,4 +96,5 @@ PYBIND11_MODULE(radar_python, m)
     bind_trigger_command(m);
     bind_ts_fft_cc(m);
     bind_usrp_echotimer_cc(m);
+    bind_usrp_mimo_echotimer_cc(m);
 }
